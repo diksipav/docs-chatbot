@@ -9,7 +9,7 @@ export default function Home() {
 
   const [prompt, setPrompt] = useState("");
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<string | undefined>("");
+  const [answer, setAnswer] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
@@ -18,26 +18,24 @@ export default function Home() {
   ) => {
     e.preventDefault();
 
-    if (eventSourceRef.current) eventSourceRef.current.close();
-
+    setIsLoading(true);
     setQuestion(prompt);
-    setAnswer(undefined);
+    setAnswer("");
     setPrompt("");
     generateAnswer(prompt);
   };
 
   const generateAnswer = async (query: string) => {
-    setIsLoading(true);
+    if (eventSourceRef.current) eventSourceRef.current.close();
 
-    const eventSource = new SSE(`api/generate`, {
+    const eventSource = new SSE(`api/generate-answer`, {
       payload: JSON.stringify({ query }),
     });
+    eventSourceRef.current = eventSource;
 
     eventSource.onerror = handleError;
     eventSource.onmessage = handleMessage;
-
     eventSource.stream();
-    eventSourceRef.current = eventSource;
   };
 
   function handleError(err: any) {
@@ -56,7 +54,7 @@ export default function Home() {
 
       const completionResponse = JSON.parse(e.data);
       const text = completionResponse.choices[0].delta?.content || "";
-      setAnswer((answer) => (answer ?? "") + text);
+      setAnswer((answer) => answer + text);
     } catch (err) {
       handleError(err);
     }
@@ -66,7 +64,9 @@ export default function Home() {
     <main className="w-screen h-screen flex items-center justify-center bg-[#2e2e2e]">
       <form className="bg-[#2e2e2e] w-[540px] relative">
         <input
-          className="py-5 pl-6 pr-[40px] rounded-md bg-[#1f1f1f] w-full outline-[#1f1f1f] focus:outline outline-offset-2 text-[#b3b3b3] mb-8 placeholder-[#4d4d4d]"
+          className={`py-5 pl-6 pr-[40px] rounded-md bg-[#1f1f1f] w-full 
+          outline-[#1f1f1f] focus:outline outline-offset-2 text-[#b3b3b3] 
+          mb-8 placeholder-[#4d4d4d]`}
           placeholder="Ask a question..."
           value={prompt}
           onChange={(e) => {
@@ -110,7 +110,16 @@ function ReturnIcon({ className }: { className?: string }) {
       <path
         fillRule="evenodd"
         clipRule="evenodd"
-        d="M12 0C11.4477 0 11 0.447715 11 1C11 1.55228 11.4477 2 12 2H17C17.5523 2 18 2.44771 18 3V6C18 6.55229 17.5523 7 17 7H3.41436L4.70726 5.70711C5.09778 5.31658 5.09778 4.68342 4.70726 4.29289C4.31673 3.90237 3.68357 3.90237 3.29304 4.29289L0.306297 7.27964L0.292893 7.2928C0.18663 7.39906 0.109281 7.52329 0.0608469 7.65571C0.0214847 7.76305 0 7.87902 0 8C0 8.23166 0.078771 8.44492 0.210989 8.61445C0.23874 8.65004 0.268845 8.68369 0.30107 8.71519L3.29289 11.707C3.68342 12.0975 4.31658 12.0975 4.70711 11.707C5.09763 11.3165 5.09763 10.6833 4.70711 10.2928L3.41431 9H17C18.6568 9 20 7.65685 20 6V3C20 1.34315 18.6568 0 17 0H12Z"
+        d={`M12 0C11.4477 0 11 0.447715 11 1C11 1.55228 11.4477 2 12 
+        2H17C17.5523 2 18 2.44771 18 3V6C18 6.55229 17.5523 7 17 
+        7H3.41436L4.70726 5.70711C5.09778 5.31658 5.09778 4.68342 4.70726 
+        4.29289C4.31673 3.90237 3.68357 3.90237 3.29304 4.29289L0.306297 
+        7.27964L0.292893 7.2928C0.18663 7.39906 0.109281 7.52329 0.0608469 
+        7.65571C0.0214847 7.76305 0 7.87902 0 8C0 8.23166 0.078771 8.44492 
+        0.210989 8.61445C0.23874 8.65004 0.268845 8.68369 0.30107 
+        8.71519L3.29289 11.707C3.68342 12.0975 4.31658 12.0975 4.70711 
+        11.707C5.09763 11.3165 5.09763 10.6833 4.70711 10.2928L3.41431 
+        9H17C18.6568 9 20 7.65685 20 6V3C20 1.34315 18.6568 0 17 0H12Z`}
       />
     </svg>
   );
